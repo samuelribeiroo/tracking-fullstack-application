@@ -1,5 +1,4 @@
-
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: <explanation>
 import { CreateRouteDto } from './dto/create-route.dto';
 // biome-ignore lint/style/useImportType: <explanation>
@@ -17,46 +16,54 @@ export class RoutesService {
   ) {}
 
   async create({ source_id, name, destination_id }: CreateRouteDto) {
-    console.log(source_id, destination_id, name)
+    try {
+      const sourceId = source_id ? String(source_id).trim() : null;
+      const destinationId = destination_id ? String(destination_id).trim() : null;
+
+      if (!sourceId || !destinationId) throw new HttpException( 'Os IDs de origem e destino são obrigatórios!', HttpStatus.BAD_REQUEST);
+
+      const { available_travel_modes, geocoded_waypoints, routes, request } = 
+      await this.directionsService.getDirectionsService(sourceId, destinationId);
     
-    const { available_travel_modes, geocoded_waypoints, routes, request } =
-      await this.directionsService.getDirectionsService(
-        source_id,
-        destination_id,
-      );
+      const legs = routes[0].legs[0];
 
-    const legs = routes[0].legs[0];
-
-    return this.prismaService.route.create({
-      data: {
-        name: name,
-        source: {
-          name: legs.start_address,
-          location: {
-            lat: legs.start_location.lat,
-            lng: legs.start_location.lng,
+      const createRoute = await this.prismaService.route.create({
+        data: {
+          name: name,
+          source: {
+            name: legs.start_address,
+            location: {
+              lat: legs.start_location.lat,
+              lng: legs.start_location.lng,
+            },
           },
-        },
 
-        destination: {
-          name: legs.end_address,
-          location: {
-            lat: legs.end_location.lat,
-            lng: legs.end_location.lng,
+          destination: {
+            name: legs.end_address,
+            location: {
+              lat: legs.end_location.lat,
+              lng: legs.end_location.lng,
+            },
           },
+          duration: legs.duration.value,
+          distance: legs.distance.value,
+          directions: JSON.parse(
+            JSON.stringify({
+              available_travel_modes,
+              geocoded_waypoints,
+              routes,
+              request,
+            }),
+          ),
         },
-        duration: legs.duration.value,
-        distance: legs.distance.value,
-        directions: JSON.parse(
-          JSON.stringify({
-            available_travel_modes,
-            geocoded_waypoints,
-            routes,
-            request,
-          }),
-        ),
-      },
-    });
+      });
+
+      return createRoute;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      
+      throw new HttpException('Erro interno no servidor ao criar a rota', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   findAll() {
