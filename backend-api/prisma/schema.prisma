@@ -13,4 +13,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1h31 -> gerar collection
+type Places {
+  name     String
+  location Coord
+}
+
+type Point {
+  location   Coord
+  created_at DateTime @default(now())
+}
+
+type Coord {
+  lat Float
+  lng Float
+}
+
+model Route {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  source      Places
+  destination Places
+  distance    Float
+  duration    Float
+  directions  Json
+  created_at  DateTime     @default(now())
+  update_at   DateTime     @updatedAt
+  RouteDriver RouteDriver?
+}
+
+model RouteDriver {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  route      Route    @relation(fields: [route_id], references: [id])
+  route_id   String   @unique @db.ObjectId
+  points     Point[]
+  created_at DateTime @default(now())
+  update_at  DateTime @updatedAt
+}
