@@ -35,12 +35,20 @@ export async function searchDirections(source: string, destination: string) {
   if (!destinationResponse.ok)
     throw new Error("Não foi possível obter as direções.");
 
-  const directionData = await directionResponse.json();
+  const data = await directionResponse.json();
+
+  const directionsData: Record<string, any> = {
+    start: data.routes[0].legs[0].start_address,
+    end: data.routes[0].legs[0].end_address,
+    duration: data.routes[0].legs[0].duration.text,
+    distance: data.routes[0].legs[0].distance.text,
+  };
 
   return {
-    directionData,
+    data,
     placeSourceId,
     placeDestinationId,
+    directionsData,
   };
 }
 
@@ -54,12 +62,12 @@ export default async function NewRoutePage({
   const result =
     source && destination ? await searchDirections(source, destination) : null;
 
-  let directionData = null;
+  let directionsData = null;
   let placeSourceId = null;
   let placeDestinationId = null;
 
   if (result) {
-    directionData = result.directionData;
+    directionsData = result.directionsData;
     placeSourceId = result.placeSourceId;
     placeDestinationId = result.placeDestinationId;
   }
@@ -98,7 +106,7 @@ export default async function NewRoutePage({
                 </Button>
               </form>
 
-              {directionData && (
+              {directionsData && (
                 <Card className="mt-6">
                   <CardHeader>
                     <CardTitle className="text-xl">
@@ -107,22 +115,22 @@ export default async function NewRoutePage({
                   </CardHeader>
                   <CardContent>
                     <dl className="space-y-2">
-                      <div>
-                        <dt className="font-semibold mb-2">Origem</dt>
-                        <dd>{directionData.routes[0].legs[0].start_address}</dd>
+                    {Object.entries(directionsData).map(([key, value]) => (
+                      <div key={key}>
+                        <dt className="font-semibold mb-2">
+                          {key === "start"
+                            ? "Origem"
+                            : key === "end"
+                            ? "Destino"
+                            : key === "duration"
+                            ? "Duração"
+                            : key === "distance"
+                            ? "Distância"
+                            : key}
+                        </dt>
+                        <dd>{value}</dd>
                       </div>
-                      <div>
-                        <dt className="font-semibold mb-2">Destino</dt>
-                        <dd>{directionData.routes[0].legs[0].end_address}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-semibold mb-2">Duração</dt>
-                        <dd>{directionData.routes[0].legs[0].duration.text}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-semibold mb-2">Distância</dt>
-                        <dd>{directionData.routes[0].legs[0].distance.text}</dd>
-                      </div>
+                    ))}
                     </dl>
                   </CardContent>
                 </Card>
