@@ -13,12 +13,22 @@ import { Label } from "@/src/components/ui/label";
 import { searchDirections } from "../actions/route-actions";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import NewRouteForm from "./NewRouteForm";
+import useToastNotifications from "@/src/hooks/useToastNotification";
+import { ToastContainer } from "react-toastify";
 
 export default function NewRoutePage() {
   const [loading, setLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState<Record<string, any> | null>(null);
+  const [placeIds, setPlaceIds] = useState<{
+    sourceId: string;
+    destinationId: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [routeState, setRouteState] = useState(null);
   const router = useRouter();
+
+  useToastNotifications(routeState);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,6 +43,10 @@ export default function NewRoutePage() {
     try {
       const result = await searchDirections(source, destination);
       setRouteInfo(result.directionsData);
+      setPlaceIds({
+        sourceId: result.placeSourceId,
+        destinationId: result.placeDestinationId,
+      });
       router.push(
         `/new-route?source=${encodeURIComponent(
           source
@@ -64,6 +78,7 @@ export default function NewRoutePage() {
                   name="source"
                   placeholder=""
                   required
+                  className="mt-2"
                 />
               </div>
               <div className="relative">
@@ -74,6 +89,7 @@ export default function NewRoutePage() {
                   name="destination"
                   placeholder=""
                   required
+                  className="mt-2"
                 />
               </div>
 
@@ -115,6 +131,30 @@ export default function NewRoutePage() {
                         <dd>{value}</dd>
                       </div>
                     ))}
+                    <ToastContainer />
+                    <NewRouteForm>
+                      {placeIds && (
+                        <>
+                          <input
+                            type="hidden"
+                            name="sourceId"
+                            defaultValue={placeIds.sourceId}
+                          />
+                          <input
+                            type="hidden"
+                            name="destinationId"
+                            defaultValue={placeIds.destinationId}
+                          />
+                        </>
+                      )}
+                      <Button
+                        size="lg"
+                        className="bg-primary text-default"
+                        disabled={loading}
+                      >
+                        Adicionar Rota
+                      </Button>
+                    </NewRouteForm>
                   </dl>
                 </CardContent>
               </Card>
