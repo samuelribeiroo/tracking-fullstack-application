@@ -16,10 +16,11 @@ import { Loader2 } from "lucide-react";
 import NewRouteForm from "./NewRouteForm";
 import useToastNotifications from "@/src/hooks/useToastNotification";
 import { ToastContainer } from "react-toastify";
+import { DirectionsData, MapNewRoute } from "./MapNewRoute";
 
 export default function NewRoutePage() {
   const [loading, setLoading] = useState(false);
-  const [routeInfo, setRouteInfo] = useState<Record<string, any> | null>(null);
+  const [routeInfo, setRouteInfo] = useState<DirectionsData | null>(null);
   const [placeIds, setPlaceIds] = useState<{
     sourceId: string;
     destinationId: string;
@@ -28,9 +29,10 @@ export default function NewRoutePage() {
   const [routeState, setRouteState] = useState(null);
   const router = useRouter();
 
+
   useToastNotifications(routeState);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
@@ -42,7 +44,7 @@ export default function NewRoutePage() {
 
     try {
       const result = await searchDirections(source, destination);
-      setRouteInfo(result.directionsData);
+      setRouteInfo(result.directionsData as DirectionsData);
       setPlaceIds({
         sourceId: result.placeSourceId,
         destinationId: result.placeDestinationId,
@@ -69,7 +71,7 @@ export default function NewRoutePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
+            <form onSubmit={handleSubmitForm} className="flex flex-col space-y-6">
               <div className="relative">
                 <Label htmlFor="source">Origem</Label>
                 <Input
@@ -162,6 +164,7 @@ export default function NewRoutePage() {
           </CardContent>
         </Card>
       </div>
+      <MapNewRoute directionsData={routeInfo} />        
     </section>
   );
 }
