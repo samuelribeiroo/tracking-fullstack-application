@@ -9,9 +9,14 @@ import RouteModel from '@/src/utils/models'
 import StartRouteForm from './StartRouteForm'
 
 async function getAvailableRoutes(): Promise<RouteModel[]> {
-  const data = await fetch('http://localhost:3000/routes')
+  const responseData = await fetch('http://localhost:3000/routes', {
+    cache: 'force-cache',
+    next: {
+      tags: ['routes'] 
+    },
+  })
 
-  return data.json()
+  return responseData.json()
 }
 
 

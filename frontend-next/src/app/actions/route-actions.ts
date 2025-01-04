@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
+
 export async function searchDirections(source: string, destination: string) {
   const [sourceResponse, destinationResponse] = await Promise.all([
     fetch(`http://localhost:3000/places?text=${source}`),
@@ -89,6 +91,8 @@ export async function createRouteAction(state: RouteState, formData: FormData) {
     if (!response.ok) {
       return { error: 'Não foi possível criar a rota.', success: false };
     }
+
+    revalidateTag('routes')
 
     return { success: true, error: undefined };
   } catch (err) {
