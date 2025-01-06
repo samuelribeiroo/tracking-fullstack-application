@@ -4,11 +4,13 @@ import { Map } from "../utils/map";
 import { getCurrentPosition } from "../utils/geolocation";
 
 
-export function useMap(containerRef: React.RefObject<HTMLDivElement>) {
+export function useMap(containerRef: React.RefObject<HTMLDivElement | null>) {
   const [map, setMap] = useState<Map>();
 
   useEffect(() => {
     (async () => {
+      if (!containerRef.current) return;
+      
       const loader = new Loader({
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
         libraries: ["routes", "geometry", "marker"],
@@ -21,8 +23,8 @@ export function useMap(containerRef: React.RefObject<HTMLDivElement>) {
       ]);
 
   
-      const map = new Map(containerRef.current!, {
-        mapId: "cf26281cdd8eccb9",
+      const map = new Map(containerRef.current, {
+        mapId: "cf26281cdd8eccb9", // Theme ID created at Google Cloud Platform
         zoom: 15,
         center: position,
         backgroundColor: '#1a1a1a'
