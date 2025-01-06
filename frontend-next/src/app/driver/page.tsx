@@ -1,55 +1,69 @@
-'use client'
+"use client";
 
-import { useState, useRef, useEffect } from 'react'
-import { ChevronsUpDown, Check, Search } from 'lucide-react'
-import { cn } from '@/src/lib/utils'
-import { MapDriver } from './MapDriver'
-import Button from '@/src/components/ui/button'
-import RouteModel from '@/src/utils/models'
-import StartRouteForm from './StartRouteForm'
-import { ToastContainer } from 'react-toastify'
+import { useState, useRef, useEffect } from "react";
+import { ChevronsUpDown, Check, Search } from "lucide-react";
+import { cn } from "@/src/lib/utils";
+import { MapDriver } from "./MapDriver";
+import Button from "@/src/components/ui/button";
+import RouteModel from "@/src/utils/models";
+import StartRouteForm from "./StartRouteForm";
+import { ToastContainer } from "react-toastify";
+import { useRouter, useSearchParams } from "next/navigation";
 
 async function getAvailableRoutes(): Promise<RouteModel[]> {
-  const responseData = await fetch('http://localhost:3000/routes', {
-    cache: 'force-cache',
+  const responseData = await fetch("http://localhost:3000/routes", {
+    cache: "force-cache",
     next: {
-      tags: ['routes'] 
+      tags: ["routes"],
     },
-  })
+  });
 
-  return responseData.json()
+  return responseData.json();
 }
 
-
 export default function DriverPage() {
-  const [open, setOpen] = useState(false)
-  const [value, setValue] = useState("")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [routes, setRoutes] = useState<RouteModel[]>([])
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [routes, setRoutes] = useState<RouteModel[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const routeId = searchParams.get("route_id");
 
   useEffect(() => {
     const fetchRoutes = async () => {
-      const fetchedRoutes = await getAvailableRoutes()
-      setRoutes(fetchedRoutes)
-    }
-    fetchRoutes()
-  }, [])
+      const fetchedRoutes = await getAvailableRoutes();
+      setRoutes(fetchedRoutes);
+    };
+    fetchRoutes();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpen(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [dropdownRef])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
-  const filteredRoutes = routes.filter(route => route.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const handleRouteChange = (selectedRouteId: string) => {
+    setValue(selectedRouteId);
+    router.push(`/driver?route_id=${selectedRouteId}`); 
+  };
+
+  const filteredRoutes = routes.filter((route) =>
+    route.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col md:flex-row w-full h-full">
@@ -85,21 +99,23 @@ export default function DriverPage() {
                       placeholder="Procurar rota..."
                       className="w-full p-2 focus:outline-none"
                       value={searchTerm}
-                      onChange={event => setSearchTerm(event.target.value)}
+                      onChange={(event) => setSearchTerm(event.target.value)}
                     />
                   </div>
                 </div>
                 <ul className="max-h-60 overflow-auto py-1">
                   {filteredRoutes.length === 0 ? (
-                    <li className="px-2 py-1 text-gray-500">Nenhuma rota encontrada.</li>
+                    <li className="px-2 py-1 text-gray-500">
+                      Nenhuma rota encontrada.
+                    </li>
                   ) : (
                     filteredRoutes.map(({ id, name }: RouteModel) => (
                       <li
                         key={id}
                         onClick={() => {
-                          setValue(id)
-                          setOpen(false)
-                          setSearchTerm("")
+                          handleRouteChange(id);
+                          setOpen(false);
+                          setSearchTerm("");
                         }}
                         className={cn(
                           "flex items-center px-2 py-1 cursor-pointer",
@@ -121,7 +137,9 @@ export default function DriverPage() {
               </div>
             )}
           </div>
+          <input type="hidden" name="route_id" value={value} />
           <Button
+          type="submit"
             size="sm"
             className="bg-black text-white p-2 rounded font-bold w-full mt-2"
           >
@@ -130,10 +148,8 @@ export default function DriverPage() {
         </StartRouteForm>
       </div>
       <div className="flex-1">
-        <MapDriver />
+        <MapDriver route_id={routeId || ''} />
       </div>
     </div>
-  )
+  );
 }
-
-
