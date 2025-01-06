@@ -7,7 +7,6 @@ import { MapDriver } from './MapDriver'
 import Button from '@/src/components/ui/button'
 import RouteModel from '@/src/utils/models'
 import StartRouteForm from './StartRouteForm'
-import { ToastContainer } from 'react-toastify'
 
 async function getAvailableRoutes(): Promise<RouteModel[]> {
   const responseData = await fetch('http://localhost:3000/routes', {
@@ -55,7 +54,6 @@ export default function DriverPage() {
     <div className="flex flex-col md:flex-row w-full h-full">
       <div className="w-full md:w-1/3 p-4">
         <h4 className="text-3xl text-black mb-4">Iniciar rota</h4>
-        <ToastContainer />
         <StartRouteForm>
           <div className="relative" ref={dropdownRef}>
             <div
