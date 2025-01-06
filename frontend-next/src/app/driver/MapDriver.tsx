@@ -1,23 +1,36 @@
 "use client";
 
+import Map from "@/src/components/ui/map";
 import { useMap } from "@/src/hooks/useMap";
-import { useRef } from "react";
+import { socket } from "@/src/utils/socket-io";
+import { useEffect, useRef } from "react";
 
-export function MapDriver() {
+export type MapDriverProps = {
+  route_id: string | null;
+};
+
+export function MapDriver({ route_id }: MapDriverProps) {
   const mapContainerRef = useRef<any>(null);
-  useMap(mapContainerRef);
+  const map = useMap(mapContainerRef);
 
-  return (
-    <>
-      <div
-        className="min-w-[300px] max-h-[800px] 
-        sm:min-h-[900px] sm:max-h-[600px] 
-        md:min-h-[700px] md:max-h-[500px] 
-        lg:min-h-[500px] lg:max-h-[400px] 
-        xl:min-h-[400px] xl:max-h-[300px]"
-        ref={mapContainerRef}
-        style={{ minHeight: "1200px", minWidth: "300px" }}
-      ></div>
-    </>
-  );
+  useEffect(() => {
+    if (!map || !route_id) return;
+
+ 
+    if (socket.disconnected) socket.connect();
+
+    
+    const eventName = `server:new-points/${route_id}:list`;
+    socket.on(eventName, (receivedData: any) => {
+      console.log("Dados recebidos:", receivedData);
+    });
+
+    socket.emit("client:new-points", { route_id });
+
+    return () => {
+      socket.off(eventName);
+    };
+  }, [route_id, map]);
+
+  return <Map ref={mapContainerRef}/>
 }
