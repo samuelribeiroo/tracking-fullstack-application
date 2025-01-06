@@ -18,13 +18,22 @@ export class RoutesService {
   async create({ source_id, name, destination_id }: CreateRouteDto) {
     try {
       const sourceId = source_id ? String(source_id).trim() : null;
-      const destinationId = destination_id ? String(destination_id).trim() : null;
+      const destinationId = destination_id
+        ? String(destination_id).trim()
+        : null;
 
-      if (!sourceId || !destinationId) throw new HttpException( 'Os IDs de origem e destino são obrigatórios!', HttpStatus.BAD_REQUEST);
+      if (!sourceId || !destinationId)
+        throw new HttpException(
+          'Os IDs de origem e destino são obrigatórios!',
+          HttpStatus.BAD_REQUEST,
+        );
 
-      const { available_travel_modes, geocoded_waypoints, routes, request } = 
-      await this.directionsService.getDirectionsService(sourceId, destinationId);
-    
+      const { available_travel_modes, geocoded_waypoints, routes, request } =
+        await this.directionsService.getDirectionsService(
+          sourceId,
+          destinationId,
+        );
+
       const legs = routes[0].legs[0];
 
       const createRoute = await this.prismaService.route.create({
@@ -61,8 +70,34 @@ export class RoutesService {
       return createRoute;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      
-      throw new HttpException('Erro interno no servidor ao criar a rota', HttpStatus.INTERNAL_SERVER_ERROR);
+
+      throw new HttpException(
+        'Erro interno no servidor ao criar a rota',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async startRoute(id: string): Promise<{ sucess: Boolean }> {
+    try {
+      const findUniqueRoute = await this.prismaService.route.findFirstOrThrow({
+        where: { id },
+      });
+
+      if (!findUniqueRoute)
+        throw new HttpException(
+          'Rota solicitada não encontrada',
+          HttpStatus.NOT_FOUND,
+        );
+
+      return { sucess: true };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      throw new HttpException(
+        'Erro interno no servidor ao criar a rota',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
