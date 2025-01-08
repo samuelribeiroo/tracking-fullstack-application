@@ -9,64 +9,29 @@ import RouteModel from "@/src/utils/models";
 import StartRouteForm from "./StartRouteForm";
 import { ToastContainer } from "react-toastify";
 import { useRouter, useSearchParams } from "next/navigation";
+import useRouteSelection from "@/src/hooks/useRouteSelection";
 
-async function getAvailableRoutes(): Promise<RouteModel[]> {
-  const responseData = await fetch("http://localhost:3000/routes");
-
-  return responseData.json();
-}
-
-async function getRoute(routeId: string): Promise<RouteModel> {
-  const responseData = await fetch(`http://localhost:3000/routes/${routeId}`);
-
-  return responseData.json();
-}
 
 export default function DriverPage() {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [routes, setRoutes] = useState<RouteModel[]>([]);
-  const [routeData, setRouteData] = useState<RouteModel | null>(null);
-  const [isLoading, setIsLoading] = useState(false); 
-  const [isRouteStarted, setIsRouteStarted] = useState(false)
+ 
+  const {
+    routes,
+    selectedRouteId,
+    routeId,
+    isRouteStarted,
+    handleStartRoute,
+    value,
+    searchTerm,
+    setSearchTerm,
+    isLoading,
+    routeData,
+    handleRouteChange,
+    filteredRoutes,
+  } = useRouteSelection();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const routeId = searchParams.get("route_id") as string;
-
-  useEffect(() => {
-    if (!routeId) return;
-
-    const fetchSingleRoute = async () => {
-      setIsLoading(true)
-      setRouteData(null)
-      setIsRouteStarted(false)
-      try {
-        const data = await getRoute(routeId)
-        setRouteData(data)
-          
-      } catch (error) {
-        console.error('Não foi possível localizar a rota.')        
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchSingleRoute()
-  }, [routeId])
-
-
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      const fetchedRoutes = await getAvailableRoutes();
-      setRoutes(fetchedRoutes);
-    };
-    fetchRoutes();
-  }, []);
-
+  
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -83,21 +48,8 @@ export default function DriverPage() {
     };
   }, [dropdownRef]);
 
-  const handleRouteChange = (selectedRouteId: string) => {
-    setValue(selectedRouteId);
-    router.push(`/driver?route_id=${selectedRouteId}`); 
-  };
-
-  const filteredRoutes = routes.filter((route) =>
-    route.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const start_location = routeData?.directions?.routes[0]?.legs[0]?.start_location;
   const end_location = routeData?.directions?.routes[0]?.legs[0]?.end_location;
-
-  const handleStartRoute = () => {
-    setIsRouteStarted(true)
-  }
 
   return (
     <div className="flex flex-col md:flex-row w-full h-full">
@@ -175,7 +127,7 @@ export default function DriverPage() {
           <Button
             type="submit"
             size="sm"
-            onSubmit={handleStartRoute}
+            onClick={handleStartRoute} 
             className="bg-black text-white p-2 rounded font-bold w-full mt-2"
           >
             Iniciar Viagem
@@ -183,16 +135,17 @@ export default function DriverPage() {
         </StartRouteForm>
       </div>
       <div className="flex-1">
-      {isLoading ? (
-          <MapDriver route_id={routeId || ""}/>
+        {isLoading ? (
+          <MapDriver route_id={""} />
         ) : start_location && end_location ? (
           <MapDriver
             route_id={routeId || ""}
             start_location={start_location}
             end_location={end_location}
+            shouldStartMovement={isRouteStarted}
           />
         ) : (
-          <MapDriver route_id={routeId || ""}/>
+          <MapDriver route_id={""} />
         )}
       </div>
     </div>
