@@ -1,7 +1,8 @@
 package internal
 
 import (
-	
+	"time"
+
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -74,4 +75,20 @@ func RouteCreatedHandler(event *RouteCreatedEvent, routeService *RouteService, m
 	return NewFreightCalculatedEvent(routeCreated.ID, routeCreated.FreightPrice), nil
 }
 
-/* Falta iniciar: DeliveryStartedHandler */
+func DeliveryStartedHandler(event *DeliveryStartedEvent, routeService *RouteService, mongoClient *mongo.Client, ch chan *DriverMovedEvent) error {
+	route, err := routeService.GetRoute(event.RouteID)
+
+	 if err != nil {
+		return err
+	 }
+
+	 go func() {
+		for _, direction := range route.Directions {
+			dme := NewDriverMovedEvent(route.ID, direction.Lat, direction.Lng)
+			ch <- dme
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	return nil
+}
